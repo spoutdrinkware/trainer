@@ -114,32 +114,43 @@ export default function PlannerPage() {
   }
 
   async function savePlan() {
-    if (!plan) return;
+    if (!plan || !userId) return;
     setSaving(true);
     const weekStart = getWeekStart();
+    const errors: string[] = [];
 
     if (plan.meals && plan.meals.length > 0) {
-      await supabase.from("meal_plans").delete().eq("user_id", userId!).eq("week_start", weekStart);
-      await supabase.from("meal_plans").insert(
+      const { error: delErr } = await supabase.from("meal_plans").delete().eq("user_id", userId).eq("week_start", weekStart);
+      if (delErr) errors.push(`Delete meals: ${delErr.message}`);
+
+      const { error: insErr } = await supabase.from("meal_plans").insert(
         plan.meals.map((m) => ({
-          user_id: userId!, week_start: weekStart, day_of_week: m.day_of_week,
+          user_id: userId, week_start: weekStart, day_of_week: m.day_of_week,
           meal_type: m.meal_type, title: m.title, recipe_json: m.recipe_json,
         }))
       );
+      if (insErr) errors.push(`Insert meals: ${insErr.message}`);
     }
 
     if (plan.workouts && plan.workouts.length > 0) {
-      await supabase.from("workouts").delete().eq("user_id", userId!).eq("week_start", weekStart);
-      await supabase.from("workouts").insert(
+      const { error: delErr } = await supabase.from("workouts").delete().eq("user_id", userId).eq("week_start", weekStart);
+      if (delErr) errors.push(`Delete workouts: ${delErr.message}`);
+
+      const { error: insErr } = await supabase.from("workouts").insert(
         plan.workouts.map((w) => ({
-          user_id: userId!, week_start: weekStart, day_of_week: w.day_of_week,
+          user_id: userId, week_start: weekStart, day_of_week: w.day_of_week,
           session: w.session, name: w.name, environment: w.environment, exercises_json: w.exercises_json,
         }))
       );
+      if (insErr) errors.push(`Insert workouts: ${insErr.message}`);
     }
 
     setSaving(false);
-    alert("Plan saved! Check Meals and Workouts tabs.");
+    if (errors.length > 0) {
+      alert(`Save failed:\n${errors.join("\n")}`);
+    } else {
+      alert("Plan saved! Check Meals and Workouts tabs.");
+    }
   }
 
   function orderGroceries() {
