@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { USER_ID, getWeekStart, DAYS } from "@/lib/constants";
 import {
@@ -9,10 +8,12 @@ import {
   Save,
   ShoppingCart,
   Loader2,
-  BrainCircuit,
+  Sparkles,
   UtensilsCrossed,
   Dumbbell,
 } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 interface Message {
   role: "user" | "assistant";
@@ -49,8 +50,6 @@ function extractPlan(text: string): PlanData | null {
     return null;
   }
 }
-
-export const dynamic = "force-dynamic";
 
 export default function PlannerPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -108,10 +107,7 @@ export default function PlannerPage() {
                 assistantContent += parsed.text;
                 setMessages((prev) => {
                   const updated = [...prev];
-                  updated[updated.length - 1] = {
-                    role: "assistant",
-                    content: assistantContent,
-                  };
+                  updated[updated.length - 1] = { role: "assistant", content: assistantContent };
                   return updated;
                 });
               }
@@ -121,7 +117,7 @@ export default function PlannerPage() {
           }
         }
       }
-    } catch (err) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: "Sorry, something went wrong. Please try again." },
@@ -137,41 +133,21 @@ export default function PlannerPage() {
     const weekStart = getWeekStart();
 
     if (plan.meals && plan.meals.length > 0) {
-      // Clear existing meals for this week
-      await supabase
-        .from("meal_plans")
-        .delete()
-        .eq("user_id", USER_ID)
-        .eq("week_start", weekStart);
-
+      await supabase.from("meal_plans").delete().eq("user_id", USER_ID).eq("week_start", weekStart);
       await supabase.from("meal_plans").insert(
         plan.meals.map((m) => ({
-          user_id: USER_ID,
-          week_start: weekStart,
-          day_of_week: m.day_of_week,
-          meal_type: m.meal_type,
-          title: m.title,
-          recipe_json: m.recipe_json,
+          user_id: USER_ID, week_start: weekStart, day_of_week: m.day_of_week,
+          meal_type: m.meal_type, title: m.title, recipe_json: m.recipe_json,
         }))
       );
     }
 
     if (plan.workouts && plan.workouts.length > 0) {
-      await supabase
-        .from("workouts")
-        .delete()
-        .eq("user_id", USER_ID)
-        .eq("week_start", weekStart);
-
+      await supabase.from("workouts").delete().eq("user_id", USER_ID).eq("week_start", weekStart);
       await supabase.from("workouts").insert(
         plan.workouts.map((w) => ({
-          user_id: USER_ID,
-          week_start: weekStart,
-          day_of_week: w.day_of_week,
-          session: w.session,
-          name: w.name,
-          environment: w.environment,
-          exercises_json: w.exercises_json,
+          user_id: USER_ID, week_start: weekStart, day_of_week: w.day_of_week,
+          session: w.session, name: w.name, environment: w.environment, exercises_json: w.exercises_json,
         }))
       );
     }
@@ -183,38 +159,36 @@ export default function PlannerPage() {
   function orderGroceries() {
     if (!plan?.grocery_list?.length) return;
     const query = plan.grocery_list.join(", ");
-    window.open(
-      `https://www.instacart.com/store/s?query=${encodeURIComponent(query)}`,
-      "_blank"
-    );
+    window.open(`https://www.instacart.com/store/s?query=${encodeURIComponent(query)}`, "_blank");
   }
 
-  // Strip JSON block for display
   function displayContent(content: string): string {
     return content.replace(/```json[\s\S]*?```/g, "").trim();
   }
 
   return (
-    <div className="flex flex-col h-full max-w-2xl mx-auto">
+    <div className="flex flex-col h-full max-w-lg mx-auto">
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-            <BrainCircuit className="w-12 h-12 mb-3 opacity-40" />
-            <p className="text-lg font-medium mb-1">AI Coach & Planner</p>
-            <p className="text-sm max-w-xs">
-              Ask me to generate a weekly meal plan, workout plan, or both. I know your diet, goals, and the weather.
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="w-16 h-16 rounded-2xl bg-[#c8441a]/10 flex items-center justify-center mb-4">
+              <Sparkles className="w-8 h-8 text-[#c8441a]" />
+            </div>
+            <p className="text-lg font-black text-white mb-1">AI Coach</p>
+            <p className="text-sm text-[#6b7280] max-w-xs">
+              Generate a weekly meal plan, workout plan, or both. I know your diet, goals, and the weather.
             </p>
-            <div className="mt-4 flex flex-wrap gap-2 justify-center">
+            <div className="mt-6 flex flex-col gap-2 w-full max-w-xs">
               {[
                 "Plan my meals and workouts for this week",
                 "Give me a 5-day keto meal prep plan",
-                "Design a push/pull/legs split with outdoor AM cardio",
+                "Design a push/pull/legs split",
               ].map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => setInput(prompt)}
-                  className="text-xs px-3 py-1.5 rounded-full border border-border hover:bg-secondary transition-colors"
+                  className="text-xs px-4 py-3 rounded-xl bg-[#111118] border border-[#1e1e2e] text-[#6b7280] hover:text-white hover:border-[#c8441a]/30 transition-all text-left"
                 >
                   {prompt}
                 </button>
@@ -224,20 +198,17 @@ export default function PlannerPage() {
         )}
 
         {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-          >
+          <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${
+              className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${
                 msg.role === "user"
-                  ? "bg-[var(--color-accent-red)] text-white rounded-br-md"
-                  : "bg-secondary rounded-bl-md"
+                  ? "bg-[#c8441a] text-white rounded-br-md"
+                  : "bg-[#111118] border border-[#1e1e2e] text-white rounded-bl-md"
               }`}
             >
               {msg.role === "assistant" ? displayContent(msg.content) : msg.content}
               {msg.role === "assistant" && !msg.content && streaming && (
-                <span className="inline-block animate-pulse">...</span>
+                <span className="inline-block animate-pulse text-[#6b7280]">...</span>
               )}
             </div>
           </div>
@@ -247,77 +218,67 @@ export default function PlannerPage() {
         {plan && !streaming && (
           <div className="space-y-3">
             {plan.meals && plan.meals.length > 0 && (
-              <Card>
-                <CardContent className="pt-4 pb-3">
-                  <div className="flex items-center gap-2 mb-3">
-                    <UtensilsCrossed className="w-4 h-4 text-[var(--color-accent-red)]" />
-                    <span className="font-medium text-sm">Meal Plan</span>
-                    <span className="text-xs text-muted-foreground">
-                      ({plan.meals.length} meals)
-                    </span>
-                  </div>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {DAYS.map((day, di) => {
-                      const dayMeals = plan.meals!.filter((m) => m.day_of_week === di);
-                      if (dayMeals.length === 0) return null;
-                      return (
-                        <div key={di}>
-                          <div className="text-xs font-medium text-muted-foreground mb-1">
-                            {day}
+              <div className="bg-[#111118] border border-[#1e1e2e] rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <UtensilsCrossed className="w-4 h-4 text-[#c8441a]" />
+                  <span className="font-bold text-sm text-white">Meal Plan</span>
+                  <span className="text-[10px] font-mono text-[#6b7280] bg-[#1e1e2e] px-2 py-0.5 rounded-full">
+                    {plan.meals.length} meals
+                  </span>
+                </div>
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {DAYS.map((day, di) => {
+                    const dayMeals = plan.meals!.filter((m) => m.day_of_week === di);
+                    if (dayMeals.length === 0) return null;
+                    return (
+                      <div key={di}>
+                        <div className="text-[10px] font-black text-[#6b7280] uppercase tracking-wider mb-1">{day}</div>
+                        {dayMeals.map((m, mi) => (
+                          <div key={mi} className="text-xs flex justify-between pl-3 py-0.5">
+                            <span>
+                              <span className="text-[#c8441a] font-bold">{m.meal_type}</span>{" "}
+                              <span className="text-white">{m.title}</span>
+                            </span>
+                            {m.recipe_json?.macros && (
+                              <span className="font-mono text-[#6b7280]">{m.recipe_json.macros.calories}cal</span>
+                            )}
                           </div>
-                          {dayMeals.map((m, mi) => (
-                            <div key={mi} className="text-xs flex justify-between pl-3">
-                              <span>
-                                <span className="text-[var(--color-accent-red)]">{m.meal_type}</span>{" "}
-                                {m.title}
-                              </span>
-                              {m.recipe_json?.macros && (
-                                <span className="font-mono text-muted-foreground">
-                                  {m.recipe_json.macros.calories}cal
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
 
             {plan.workouts && plan.workouts.length > 0 && (
-              <Card>
-                <CardContent className="pt-4 pb-3">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Dumbbell className="w-4 h-4 text-[var(--color-accent-red)]" />
-                    <span className="font-medium text-sm">Workout Plan</span>
-                    <span className="text-xs text-muted-foreground">
-                      ({plan.workouts.length} sessions)
-                    </span>
-                  </div>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {DAYS.map((day, di) => {
-                      const dayWorkouts = plan.workouts!.filter((w) => w.day_of_week === di);
-                      if (dayWorkouts.length === 0) return null;
-                      return (
-                        <div key={di}>
-                          <div className="text-xs font-medium text-muted-foreground mb-1">
-                            {day}
+              <div className="bg-[#111118] border border-[#1e1e2e] rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Dumbbell className="w-4 h-4 text-[#c8441a]" />
+                  <span className="font-bold text-sm text-white">Workout Plan</span>
+                  <span className="text-[10px] font-mono text-[#6b7280] bg-[#1e1e2e] px-2 py-0.5 rounded-full">
+                    {plan.workouts.length} sessions
+                  </span>
+                </div>
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {DAYS.map((day, di) => {
+                    const dayWorkouts = plan.workouts!.filter((w) => w.day_of_week === di);
+                    if (dayWorkouts.length === 0) return null;
+                    return (
+                      <div key={di}>
+                        <div className="text-[10px] font-black text-[#6b7280] uppercase tracking-wider mb-1">{day}</div>
+                        {dayWorkouts.map((w, wi) => (
+                          <div key={wi} className="text-xs pl-3 py-0.5">
+                            <span className="text-[#c8441a] font-bold">{w.session}</span>{" "}
+                            <span className="text-white">{w.name}</span>{" "}
+                            <span className="text-[#6b7280]">({w.environment})</span>
                           </div>
-                          {dayWorkouts.map((w, wi) => (
-                            <div key={wi} className="text-xs pl-3">
-                              <span className="text-[var(--color-accent-red)]">{w.session}</span>{" "}
-                              {w.name}{" "}
-                              <span className="text-muted-foreground">({w.environment})</span>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
 
             {/* Action buttons */}
@@ -325,22 +286,18 @@ export default function PlannerPage() {
               <button
                 onClick={savePlan}
                 disabled={saving}
-                className="flex-1 py-2.5 rounded-lg bg-[var(--color-accent-red)] text-white font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
+                className="flex-1 py-3.5 rounded-2xl bg-[#c8441a] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#e05a2e] disabled:opacity-50 transition-colors"
               >
-                {saving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save Plan
               </button>
               {plan.grocery_list && plan.grocery_list.length > 0 && (
                 <button
                   onClick={orderGroceries}
-                  className="flex-1 py-2.5 rounded-lg bg-secondary text-foreground font-medium text-sm flex items-center justify-center gap-2 hover:bg-secondary/80"
+                  className="flex-1 py-3.5 rounded-2xl bg-[#111118] border border-[#1e1e2e] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#16161f] transition-colors"
                 >
                   <ShoppingCart className="w-4 h-4" />
-                  Order Groceries
+                  Groceries
                 </button>
               )}
             </div>
@@ -349,25 +306,21 @@ export default function PlannerPage() {
       </div>
 
       {/* Input */}
-      <form onSubmit={sendMessage} className="p-4 border-t border-border">
+      <form onSubmit={sendMessage} className="p-4 border-t border-[#1e1e2e]">
         <div className="flex gap-2">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask your AI coach..."
-            className="flex-1 bg-secondary rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-red)]"
+            className="flex-1 bg-[#111118] border border-[#1e1e2e] rounded-2xl px-4 py-3 text-sm text-white placeholder:text-[#6b7280] focus:outline-none focus:border-[#c8441a]/50"
             disabled={streaming}
           />
           <button
             type="submit"
             disabled={streaming || !input.trim()}
-            className="p-2.5 rounded-lg bg-[var(--color-accent-red)] text-white disabled:opacity-50 hover:opacity-90"
+            className="p-3 rounded-2xl bg-[#c8441a] text-white disabled:opacity-30 hover:bg-[#e05a2e] transition-colors"
           >
-            {streaming ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
+            {streaming ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </button>
         </div>
       </form>

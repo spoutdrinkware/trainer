@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
-import { USER_ID, DAYS, MEAL_TYPES, getWeekStart } from "@/lib/constants";
+import { USER_ID, DAYS, MEAL_TYPES } from "@/lib/constants";
 import { ChevronDown, ChevronUp, UtensilsCrossed } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 interface MealPlan {
   id: string;
@@ -17,8 +18,6 @@ interface MealPlan {
     macros?: { calories?: number; protein?: number; fat?: number; carbs?: number };
   } | null;
 }
-
-export const dynamic = "force-dynamic";
 
 export default function MealsPage() {
   const [meals, setMeals] = useState<MealPlan[]>([]);
@@ -47,20 +46,20 @@ export default function MealsPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-2xl mx-auto">
+    <div className="p-4 md:p-8 space-y-5 max-w-lg mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Meal Plan</h1>
+        <h1 className="text-xl font-black text-white">Meal Plan</h1>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setWeekOffset((w) => w - 1)}
-            className="px-2 py-1 text-sm rounded bg-secondary hover:bg-secondary/80"
+            className="px-3 py-1.5 text-xs font-bold rounded-xl bg-[#111118] border border-[#1e1e2e] text-[#6b7280] hover:text-white transition-colors"
           >
             Prev
           </button>
-          <span className="text-xs text-muted-foreground font-mono">{weekStart}</span>
+          <span className="text-xs text-[#6b7280] font-mono">{weekStart}</span>
           <button
             onClick={() => setWeekOffset((w) => w + 1)}
-            className="px-2 py-1 text-sm rounded bg-secondary hover:bg-secondary/80"
+            className="px-3 py-1.5 text-xs font-bold rounded-xl bg-[#111118] border border-[#1e1e2e] text-[#6b7280] hover:text-white transition-colors"
           >
             Next
           </button>
@@ -71,78 +70,70 @@ export default function MealsPage() {
         {DAYS.map((day, i) => {
           const dayMeals = getMealsForDay(i);
           const isExpanded = expandedDay === i;
+          const isToday = i === new Date().getDay();
           return (
-            <Card key={i}>
+            <div key={i} className={`bg-[#111118] border rounded-2xl overflow-hidden transition-colors ${isToday ? "border-[#c8441a]/30" : "border-[#1e1e2e]"}`}>
               <button
                 onClick={() => setExpandedDay(isExpanded ? null : i)}
-                className="w-full"
+                className="w-full px-5 py-4 flex items-center justify-between"
               >
-                <CardHeader className="py-3 px-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
-                      <span className={i === new Date().getDay() ? "text-[var(--color-accent-red)]" : ""}>
-                        {day}
-                      </span>
-                      {dayMeals.length > 0 && (
-                        <span className="text-xs text-muted-foreground">
-                          {dayMeals.length} meals
-                        </span>
-                      )}
-                    </CardTitle>
-                    {isExpanded ? (
-                      <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                    )}
-                  </div>
-                </CardHeader>
+                <div className="flex items-center gap-3">
+                  <span className={`text-sm font-bold ${isToday ? "text-[#c8441a]" : "text-white"}`}>
+                    {day}
+                  </span>
+                  {dayMeals.length > 0 && (
+                    <span className="text-[10px] font-mono text-[#6b7280] bg-[#1e1e2e] px-2 py-0.5 rounded-full">
+                      {dayMeals.length} meals
+                    </span>
+                  )}
+                </div>
+                {isExpanded ? (
+                  <ChevronUp className="w-4 h-4 text-[#6b7280]" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-[#6b7280]" />
+                )}
               </button>
               {isExpanded && (
-                <CardContent className="pt-0 pb-4 px-4 space-y-3">
+                <div className="px-5 pb-4 space-y-3 border-t border-[#1e1e2e] pt-3">
                   {dayMeals.length === 0 ? (
-                    <div className="text-center py-6 text-muted-foreground text-sm">
-                      <UtensilsCrossed className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                      No meals planned. Use the Planner tab to generate a meal plan.
+                    <div className="text-center py-8 text-[#6b7280]">
+                      <UtensilsCrossed className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-xs">No meals planned. Use the Planner tab.</p>
                     </div>
                   ) : (
                     MEAL_TYPES.map((type) => {
-                      const meal = dayMeals.find(
-                        (m) => m.meal_type.toLowerCase() === type.toLowerCase()
-                      );
+                      const meal = dayMeals.find((m) => m.meal_type.toLowerCase() === type.toLowerCase());
                       if (!meal) return null;
                       const macros = meal.recipe_json?.macros;
                       return (
-                        <div key={type} className="border border-border rounded-lg p-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-medium text-[var(--color-accent-red)] uppercase tracking-wider">
+                        <div key={type} className="bg-[#0a0a0f] border border-[#1e1e2e] rounded-xl p-4">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[10px] font-black text-[#c8441a] uppercase tracking-wider">
                               {type}
                             </span>
                             {macros && (
-                              <span className="text-[10px] font-mono text-muted-foreground">
-                                {macros.calories}cal &middot; {macros.protein}p &middot;{" "}
-                                {macros.fat}f &middot; {macros.carbs}c
+                              <span className="text-[10px] font-mono text-[#6b7280]">
+                                {macros.calories}cal \u2022 {macros.protein}p \u2022 {macros.fat}f \u2022 {macros.carbs}c
                               </span>
                             )}
                           </div>
-                          <div className="font-medium text-sm">{meal.title}</div>
+                          <div className="font-semibold text-sm text-white">{meal.title}</div>
                           {meal.recipe_json?.ingredients && (
-                            <div className="mt-2">
-                              <div className="text-xs text-muted-foreground mb-1">Ingredients:</div>
-                              <ul className="text-xs text-muted-foreground space-y-0.5">
+                            <div className="mt-3">
+                              <div className="text-[10px] font-bold text-[#6b7280] uppercase tracking-wider mb-1.5">Ingredients</div>
+                              <ul className="text-xs text-[#6b7280] space-y-0.5">
                                 {meal.recipe_json.ingredients.map((ing, idx) => (
-                                  <li key={idx}>• {ing}</li>
+                                  <li key={idx}>\u2022 {ing}</li>
                                 ))}
                               </ul>
                             </div>
                           )}
                           {meal.recipe_json?.instructions && (
-                            <div className="mt-2">
-                              <div className="text-xs text-muted-foreground mb-1">Instructions:</div>
-                              <ol className="text-xs text-muted-foreground space-y-0.5">
+                            <div className="mt-3">
+                              <div className="text-[10px] font-bold text-[#6b7280] uppercase tracking-wider mb-1.5">Instructions</div>
+                              <ol className="text-xs text-[#6b7280] space-y-0.5">
                                 {meal.recipe_json.instructions.map((step, idx) => (
-                                  <li key={idx}>
-                                    {idx + 1}. {step}
-                                  </li>
+                                  <li key={idx}>{idx + 1}. {step}</li>
                                 ))}
                               </ol>
                             </div>
@@ -151,9 +142,9 @@ export default function MealsPage() {
                       );
                     })
                   )}
-                </CardContent>
+                </div>
               )}
-            </Card>
+            </div>
           );
         })}
       </div>

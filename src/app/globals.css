@@ -48,42 +48,44 @@
   --radius-4xl: calc(var(--radius) * 2.6);
   --color-accent-red: #c8441a;
   --color-accent-red-light: #e05a2e;
-  --color-surface: #161b22;
-  --color-surface-2: #1c2330;
+  --color-accent-blue: #3b82f6;
+  --color-accent-green: #22c55e;
+  --color-surface: #111118;
+  --color-surface-2: #16161f;
 }
 
 :root {
-  --background: #0e1117;
-  --foreground: #f0f0f0;
-  --card: #161b22;
-  --card-foreground: #f0f0f0;
-  --popover: #161b22;
-  --popover-foreground: #f0f0f0;
+  --background: #0a0a0f;
+  --foreground: #ffffff;
+  --card: #111118;
+  --card-foreground: #ffffff;
+  --popover: #111118;
+  --popover-foreground: #ffffff;
   --primary: #c8441a;
   --primary-foreground: #ffffff;
-  --secondary: #1c2330;
-  --secondary-foreground: #f0f0f0;
-  --muted: #1c2330;
-  --muted-foreground: #8b949e;
-  --accent: #1c2330;
-  --accent-foreground: #f0f0f0;
-  --destructive: #da3633;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.12);
+  --secondary: #16161f;
+  --secondary-foreground: #ffffff;
+  --muted: #16161f;
+  --muted-foreground: #6b7280;
+  --accent: #16161f;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --border: #1e1e2e;
+  --input: #1e1e2e;
   --ring: #c8441a;
   --chart-1: #c8441a;
-  --chart-2: #2ea043;
-  --chart-3: #58a6ff;
-  --chart-4: #d29922;
-  --chart-5: #8b949e;
-  --radius: 0.625rem;
-  --sidebar: #0d1017;
-  --sidebar-foreground: #f0f0f0;
+  --chart-2: #22c55e;
+  --chart-3: #3b82f6;
+  --chart-4: #eab308;
+  --chart-5: #6b7280;
+  --radius: 1rem;
+  --sidebar: #0a0a0f;
+  --sidebar-foreground: #ffffff;
   --sidebar-primary: #c8441a;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #161b22;
-  --sidebar-accent-foreground: #f0f0f0;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-accent: #111118;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1e1e2e;
   --sidebar-ring: #c8441a;
 }
 
@@ -93,8 +95,44 @@
   }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   html {
     @apply font-sans;
   }
+}
+
+/* Stat numbers — bold athletic style */
+.stat-number {
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+/* Glow effect for active accent elements */
+.glow-red {
+  box-shadow: 0 0 20px rgba(200, 68, 26, 0.3);
+}
+
+/* Progress bar animation */
+.progress-bar {
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Safe area for iPhone */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e1e2e;
+  border-radius: 4px;
 }

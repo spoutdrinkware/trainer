@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { USER_ID, DAYS, todayString } from "@/lib/constants";
-import { Dumbbell, TreePine, Building2, Check } from "lucide-react";
+import { Dumbbell, TreePine, Building2, Check, ChevronDown, ChevronUp } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 interface Workout {
   id: string;
@@ -17,8 +17,6 @@ interface Workout {
   completed: boolean;
   week_start: string;
 }
-
-export const dynamic = "force-dynamic";
 
 export default function WorkoutsPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -44,15 +42,10 @@ export default function WorkoutsPage() {
 
   async function toggleComplete(workout: Workout) {
     const newVal = !workout.completed;
-    await supabase
-      .from("workouts")
-      .update({ completed: newVal })
-      .eq("id", workout.id);
+    await supabase.from("workouts").update({ completed: newVal }).eq("id", workout.id);
 
-    // Also update checklist_logs
     const today = todayString();
-    const checkItem =
-      workout.session === "AM" ? "Workout 1 (outdoor)" : "Workout 2";
+    const checkItem = workout.session === "AM" ? "Workout 1 (outdoor)" : "Workout 2";
 
     const { data: existing } = await supabase
       .from("checklist_logs")
@@ -63,37 +56,29 @@ export default function WorkoutsPage() {
       .maybeSingle();
 
     if (existing) {
-      await supabase
-        .from("checklist_logs")
-        .update({ completed: newVal })
-        .eq("id", existing.id);
+      await supabase.from("checklist_logs").update({ completed: newVal }).eq("id", existing.id);
     } else {
-      await supabase.from("checklist_logs").insert({
-        user_id: USER_ID,
-        date: today,
-        item: checkItem,
-        completed: newVal,
-      });
+      await supabase.from("checklist_logs").insert({ user_id: USER_ID, date: today, item: checkItem, completed: newVal });
     }
 
     loadWorkouts();
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-2xl mx-auto">
+    <div className="p-4 md:p-8 space-y-5 max-w-lg mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Workouts</h1>
+        <h1 className="text-xl font-black text-white">Workouts</h1>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setWeekOffset((w) => w - 1)}
-            className="px-2 py-1 text-sm rounded bg-secondary hover:bg-secondary/80"
+            className="px-3 py-1.5 text-xs font-bold rounded-xl bg-[#111118] border border-[#1e1e2e] text-[#6b7280] hover:text-white transition-colors"
           >
             Prev
           </button>
-          <span className="text-xs text-muted-foreground font-mono">{weekStart}</span>
+          <span className="text-xs text-[#6b7280] font-mono">{weekStart}</span>
           <button
             onClick={() => setWeekOffset((w) => w + 1)}
-            className="px-2 py-1 text-sm rounded bg-secondary hover:bg-secondary/80"
+            className="px-3 py-1.5 text-xs font-bold rounded-xl bg-[#111118] border border-[#1e1e2e] text-[#6b7280] hover:text-white transition-colors"
           >
             Next
           </button>
@@ -105,88 +90,92 @@ export default function WorkoutsPage() {
           const dayWorkouts = workouts.filter((w) => w.day_of_week === i);
           const isExpanded = expandedDay === i;
           const allDone = dayWorkouts.length > 0 && dayWorkouts.every((w) => w.completed);
+          const isToday = i === new Date().getDay();
 
           return (
-            <Card key={i}>
+            <div key={i} className={`bg-[#111118] border rounded-2xl overflow-hidden transition-colors ${isToday ? "border-[#c8441a]/30" : "border-[#1e1e2e]"}`}>
               <button
                 onClick={() => setExpandedDay(isExpanded ? null : i)}
-                className="w-full"
+                className="w-full px-5 py-4 flex items-center justify-between"
               >
-                <CardHeader className="py-3 px-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
-                      <span className={i === new Date().getDay() ? "text-[var(--color-accent-red)]" : ""}>
-                        {day}
-                      </span>
-                      {allDone && <Check className="w-4 h-4 text-green-500" />}
-                    </CardTitle>
-                    <div className="flex gap-1.5">
-                      {dayWorkouts.map((w) => (
-                        <Badge
-                          key={w.id}
-                          variant={w.completed ? "default" : "secondary"}
-                          className={`text-[10px] ${w.completed ? "bg-green-800 text-green-100" : ""}`}
-                        >
-                          {w.session}
-                        </Badge>
-                      ))}
+                <div className="flex items-center gap-3">
+                  <span className={`text-sm font-bold ${isToday ? "text-[#c8441a]" : "text-white"}`}>
+                    {day}
+                  </span>
+                  {allDone && (
+                    <div className="w-5 h-5 rounded-md bg-[#22c55e] flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
                     </div>
-                  </div>
-                </CardHeader>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {dayWorkouts.map((w) => (
+                    <span
+                      key={w.id}
+                      className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider ${
+                        w.completed
+                          ? "bg-[#22c55e]/20 text-[#22c55e]"
+                          : "bg-[#1e1e2e] text-[#6b7280]"
+                      }`}
+                    >
+                      {w.session}
+                    </span>
+                  ))}
+                  {isExpanded ? (
+                    <ChevronUp className="w-4 h-4 text-[#6b7280] ml-1" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-[#6b7280] ml-1" />
+                  )}
+                </div>
               </button>
               {isExpanded && (
-                <CardContent className="pt-0 pb-4 px-4 space-y-3">
+                <div className="px-5 pb-4 space-y-3 border-t border-[#1e1e2e] pt-3">
                   {dayWorkouts.length === 0 ? (
-                    <div className="text-center py-6 text-muted-foreground text-sm">
-                      <Dumbbell className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                      No workouts planned. Use the Planner tab.
+                    <div className="text-center py-8 text-[#6b7280]">
+                      <Dumbbell className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-xs">No workouts planned. Use the Planner tab.</p>
                     </div>
                   ) : (
                     dayWorkouts.map((w) => (
-                      <div key={w.id} className="border border-border rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-[var(--color-accent-red)] uppercase">
+                      <div key={w.id} className="bg-[#0a0a0f] border border-[#1e1e2e] rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-black text-[#c8441a] uppercase tracking-wider bg-[#c8441a]/10 px-2.5 py-1 rounded-lg">
                               {w.session}
                             </span>
-                            <span className="font-medium text-sm">{w.name}</span>
+                            <span className="font-bold text-sm text-white">{w.name}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-[10px] gap-1">
+                            <span className="text-[10px] font-bold text-[#6b7280] flex items-center gap-1">
                               {w.environment === "outdoor" ? (
                                 <TreePine className="w-3 h-3" />
                               ) : (
                                 <Building2 className="w-3 h-3" />
                               )}
                               {w.environment}
-                            </Badge>
+                            </span>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleComplete(w);
                               }}
-                              className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
                                 w.completed
-                                  ? "bg-green-600 border-green-600"
-                                  : "border-muted-foreground/40 hover:border-[var(--color-accent-red)]"
+                                  ? "bg-[#22c55e]"
+                                  : "border-2 border-[#1e1e2e] hover:border-[#c8441a]"
                               }`}
                             >
-                              {w.completed && <Check className="w-3.5 h-3.5 text-white" />}
+                              {w.completed && <Check className="w-4 h-4 text-white" />}
                             </button>
                           </div>
                         </div>
                         {w.exercises_json && w.exercises_json.length > 0 && (
-                          <div className="space-y-1 mt-2">
+                          <div className="space-y-1.5 border-t border-[#1e1e2e] pt-3">
                             {w.exercises_json.map((ex, idx) => (
-                              <div
-                                key={idx}
-                                className="flex items-center justify-between text-xs text-muted-foreground"
-                              >
-                                <span>{ex.name}</span>
-                                <span className="font-mono">
-                                  {ex.sets && ex.reps
-                                    ? `${ex.sets}x${ex.reps}`
-                                    : ex.notes || ""}
+                              <div key={idx} className="flex items-center justify-between text-xs">
+                                <span className="text-[#6b7280]">{ex.name}</span>
+                                <span className="font-mono text-white">
+                                  {ex.sets && ex.reps ? `${ex.sets}\u00d7${ex.reps}` : ex.notes || ""}
                                 </span>
                               </div>
                             ))}
@@ -195,9 +184,9 @@ export default function WorkoutsPage() {
                       </div>
                     ))
                   )}
-                </CardContent>
+                </div>
               )}
-            </Card>
+            </div>
           );
         })}
       </div>
