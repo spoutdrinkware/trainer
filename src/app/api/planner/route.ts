@@ -73,46 +73,56 @@ When asked to generate a plan, respond with a structured JSON block wrapped in \
 Be direct and coach-like — push him, use athletic language. After the JSON block, add a brief coach's note.`;
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
-  const weather = await getWeather();
+  try {
+    const { messages } = await req.json();
+    const weather = await getWeather();
 
-  const systemContent = `${SYSTEM_PROMPT}\n\nCurrent 7-day weather forecast for ${LOCATION.name}:\n${weather}`;
+    const systemContent = `${SYSTEM_PROMPT}\n\nCurrent 7-day weather forecast for ${LOCATION.name}:\n${weather}`;
 
-  const stream = await client.messages.stream({
-    model: "claude-sonnet-4-6-20250514",
-    max_tokens: 8192,
-    system: systemContent,
-    messages: messages.map((m: { role: string; content: string }) => ({
-      role: m.role as "user" | "assistant",
-      content: m.content,
-    })),
-  });
+    const stream = client.messages.stream({
+      model: "claude-sonnet-4-6-20250514",
+      max_tokens: 8192,
+      system: systemContent,
+      messages: messages.map((m: { role: string; content: string }) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })),
+    });
 
-  const encoder = new TextEncoder();
+    const encoder = new TextEncoder();
 
-  const readable = new ReadableStream({
-    async start(controller) {
-      try {
-        for await (const event of stream) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
-            controller.enqueue(encoder.encode(event.delta.text));
+    const readable = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const event of stream) {
+            if (
+              event.type === "content_block_delta" &&
+              event.delta.type === "text_delta"
+            ) {
+              controller.enqueue(encoder.encode(event.delta.text));
+            }
           }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "Stream failed";
+          controller.enqueue(encoder.encode(`\n\n[Error: ${msg}]`));
+        } finally {
+          controller.close();
         }
-      } catch (err) {
-        console.error("Stream error:", err);
-      } finally {
-        controller.close();
-      }
-    },
-  });
+      },
+    });
 
-  return new Response(readable, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Cache-Control": "no-cache",
-    },
-  });
+    return new Response(readable, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache",
+      },
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    console.error("Planner API error:", msg);
+    return new Response(JSON.stringify({ error: msg }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 }
