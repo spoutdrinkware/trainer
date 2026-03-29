@@ -87,6 +87,14 @@ export default function WorkoutsPage() {
           >
             Next
           </button>
+          {weekOffset !== 0 && (
+            <button
+              onClick={() => setWeekOffset(0)}
+              className="px-3 py-1.5 text-xs font-bold rounded-full bg-[#c8441a] text-white hover:bg-[#e05a2e] transition-colors"
+            >
+              This Week
+            </button>
+          )}
         </div>
       </div>
 

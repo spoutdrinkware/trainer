@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/useUser";
 import { getWeekStart, DAYS } from "@/lib/constants";
 import {
@@ -43,13 +42,34 @@ interface PlanData {
 }
 
 function extractPlan(text: string): PlanData | null {
-  const match = text.match(/```json\s*([\s\S]*?)```/);
-  if (!match) return null;
-  try {
-    return JSON.parse(match[1]);
-  } catch {
-    return null;
+  // Try ```json blocks first
+  const jsonMatch = text.match(/```json\s*([\s\S]*?)```/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[1]);
+    } catch (e) {
+      console.error("[extractPlan] Failed to parse ```json block:", e);
+    }
   }
+  // Try <plan> tags
+  const planMatch = text.match(/<plan>([\s\S]*?)<\/plan>/);
+  if (planMatch) {
+    try {
+      return JSON.parse(planMatch[1]);
+    } catch (e) {
+      console.error("[extractPlan] Failed to parse <plan> block:", e);
+    }
+  }
+  // Try finding raw JSON object
+  const rawMatch = text.match(/\{[\s\S]*"meals"[\s\S]*\}/);
+  if (rawMatch) {
+    try {
+      return JSON.parse(rawMatch[0]);
+    } catch (e) {
+      console.error("[extractPlan] Failed to parse raw JSON:", e);
+    }
+  }
+  return null;
 }
 
 export default function PlannerPage() {
@@ -58,6 +78,7 @@ export default function PlannerPage() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
@@ -117,39 +138,36 @@ export default function PlannerPage() {
     if (!plan || !userId) return;
     setSaving(true);
     const weekStart = getWeekStart();
-    const errors: string[] = [];
 
-    if (plan.meals && plan.meals.length > 0) {
-      const { error: delErr } = await supabase.from("meal_plans").delete().eq("user_id", userId).eq("week_start", weekStart);
-      if (delErr) errors.push(`Delete meals: ${delErr.message}`);
+    try {
+      const res = await fetch("/api/save-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          meals: plan.meals || [],
+          workouts: plan.workouts || [],
+          userId,
+          weekStart,
+        }),
+      });
 
-      const { error: insErr } = await supabase.from("meal_plans").insert(
-        plan.meals.map((m) => ({
-          user_id: userId, week_start: weekStart, day_of_week: m.day_of_week,
-          meal_type: m.meal_type, title: m.title, recipe_json: m.recipe_json,
-        }))
-      );
-      if (insErr) errors.push(`Insert meals: ${insErr.message}`);
-    }
+      const result = await res.json();
+      console.log("[savePlan] response:", result);
 
-    if (plan.workouts && plan.workouts.length > 0) {
-      const { error: delErr } = await supabase.from("workouts").delete().eq("user_id", userId).eq("week_start", weekStart);
-      if (delErr) errors.push(`Delete workouts: ${delErr.message}`);
-
-      const { error: insErr } = await supabase.from("workouts").insert(
-        plan.workouts.map((w) => ({
-          user_id: userId, week_start: weekStart, day_of_week: w.day_of_week,
-          session: w.session, name: w.name, environment: w.environment, exercises_json: w.exercises_json, completed: false,
-        }))
-      );
-      if (insErr) errors.push(`Insert workouts: ${insErr.message}`);
-    }
-
-    setSaving(false);
-    if (errors.length > 0) {
-      alert(`Save failed:\n${errors.join("\n")}`);
-    } else {
-      alert(`Saved ${plan.meals?.length || 0} meals and ${plan.workouts?.length || 0} workouts for week_start=${weekStart}, user=${userId?.slice(0, 8)}...`);
+      if (result.success) {
+        setSaveStatus(`Saved ${result.saved.meals} meals and ${result.saved.workouts} workouts!`);
+        setTimeout(() => setSaveStatus(null), 3000);
+      } else {
+        console.error("[savePlan] errors:", result.errors);
+        setSaveStatus(`Save failed: ${result.errors.map((e: { error: string }) => e.error).join(", ")}`);
+        setTimeout(() => setSaveStatus(null), 5000);
+      }
+    } catch (err) {
+      console.error("[savePlan] fetch error:", err);
+      setSaveStatus("Save failed — network error");
+      setTimeout(() => setSaveStatus(null), 5000);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -160,7 +178,10 @@ export default function PlannerPage() {
   }
 
   function displayContent(content: string): string {
-    return content.replace(/```json[\s\S]*?```/g, "").trim();
+    return content
+      .replace(/```json[\s\S]*?```/g, "")
+      .replace(/<plan>[\s\S]*?<\/plan>/g, "")
+      .trim();
   }
 
   return (
@@ -301,6 +322,15 @@ export default function PlannerPage() {
           </div>
         )}
       </div>
+
+      {/* Toast */}
+      {saveStatus && (
+        <div className={`mx-4 mb-2 px-4 py-3 rounded-xl text-sm font-medium text-center ${
+          saveStatus.includes("failed") ? "bg-[#ef4444]/20 text-[#ef4444]" : "bg-[#22c55e]/20 text-[#22c55e]"
+        }`}>
+          {saveStatus}
+        </div>
+      )}
 
       {/* Input */}
       <form onSubmit={sendMessage} className="p-4 border-t border-[#1e1e2e]">
