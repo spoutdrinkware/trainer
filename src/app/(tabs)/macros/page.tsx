@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { USER_ID, MACRO_TARGETS } from "@/lib/constants";
+import { useUser } from "@/lib/useUser";
+import { MACRO_TARGETS } from "@/lib/constants";
 import { Flame, Beef, Droplets, Wheat, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ interface MacroLog {
 }
 
 export default function MacrosPage() {
+  const userId = useUser();
   const [logs, setLogs] = useState<MacroLog[]>([]);
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [showForm, setShowForm] = useState(false);
@@ -35,14 +37,15 @@ export default function MacrosPage() {
     const { data } = await supabase
       .from("macro_logs")
       .select("*")
-      .eq("user_id", USER_ID)
+      .eq("user_id", userId!)
       .gte("logged_at", `${date}T00:00:00`)
       .lte("logged_at", `${date}T23:59:59`)
       .order("logged_at");
     if (data) setLogs(data);
-  }, [date]);
+  }, [date, userId]);
 
   useEffect(() => {
+    if (!userId) return;
     loadLogs();
   }, [loadLogs]);
 
@@ -72,7 +75,7 @@ export default function MacrosPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     await supabase.from("macro_logs").insert({
-      user_id: USER_ID,
+      user_id: userId!,
       logged_at: new Date(`${date}T12:00:00`).toISOString(),
       meal_type: form.meal_type,
       description: form.description,

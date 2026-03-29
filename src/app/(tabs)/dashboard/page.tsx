@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/lib/useUser";
 import {
-  USER_ID,
   CHECKLIST_ITEMS,
   MACRO_TARGETS,
   getDayNumber,
@@ -114,6 +114,7 @@ const CHECKLIST_ICONS: Record<string, typeof Dumbbell> = {
 };
 
 export default function DashboardPage() {
+  const userId = useUser();
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const [weather, setWeather] = useState<Weather | null>(null);
   const [macros, setMacros] = useState<DailyMacros>({ calories: 0, protein: 0, fat: 0, carbs: 0 });
@@ -134,20 +135,20 @@ export default function DashboardPage() {
     const { data } = await supabase
       .from("checklist_logs")
       .select("item, completed")
-      .eq("user_id", USER_ID)
+      .eq("user_id", userId!)
       .eq("date", today);
     if (data) {
       const map: Record<string, boolean> = {};
       data.forEach((row) => (map[row.item] = row.completed));
       setChecklist(map);
     }
-  }, [today]);
+  }, [today, userId]);
 
   const loadMacros = useCallback(async () => {
     const { data } = await supabase
       .from("macro_logs")
       .select("calories, protein_g, fat_g, carbs_g")
-      .eq("user_id", USER_ID)
+      .eq("user_id", userId!)
       .gte("logged_at", `${today}T00:00:00`)
       .lte("logged_at", `${today}T23:59:59`);
     if (data) {
@@ -158,19 +159,20 @@ export default function DashboardPage() {
         carbs: data.reduce((s, r) => s + Number(r.carbs_g || 0), 0),
       });
     }
-  }, [today]);
+  }, [today, userId]);
 
   const loadWater = useCallback(async () => {
     const { data } = await supabase
       .from("water_logs")
       .select("cups")
-      .eq("user_id", USER_ID)
+      .eq("user_id", userId!)
       .eq("date", today)
       .maybeSingle();
     if (data) setWaterCups(data.cups);
-  }, [today]);
+  }, [today, userId]);
 
   useEffect(() => {
+    if (!userId) return;
     loadChecklist();
     loadMacros();
     loadWater();
@@ -189,7 +191,7 @@ export default function DashboardPage() {
         }
       })
       .catch(() => {});
-  }, [loadChecklist, loadMacros, loadWater]);
+  }, [userId, loadChecklist, loadMacros, loadWater]);
 
   async function toggleItem(item: string) {
     const newVal = !checklist[item];
@@ -198,7 +200,7 @@ export default function DashboardPage() {
     const { data: existing } = await supabase
       .from("checklist_logs")
       .select("id")
-      .eq("user_id", USER_ID)
+      .eq("user_id", userId!)
       .eq("date", today)
       .eq("item", item)
       .maybeSingle();
@@ -206,7 +208,7 @@ export default function DashboardPage() {
     if (existing) {
       await supabase.from("checklist_logs").update({ completed: newVal }).eq("id", existing.id);
     } else {
-      await supabase.from("checklist_logs").insert({ user_id: USER_ID, date: today, item, completed: newVal });
+      await supabase.from("checklist_logs").insert({ user_id: userId!, date: today, item, completed: newVal });
     }
   }
 
@@ -215,14 +217,14 @@ export default function DashboardPage() {
     const { data: existing } = await supabase
       .from("water_logs")
       .select("id")
-      .eq("user_id", USER_ID)
+      .eq("user_id", userId!)
       .eq("date", today)
       .maybeSingle();
 
     if (existing) {
       await supabase.from("water_logs").update({ cups }).eq("id", existing.id);
     } else {
-      await supabase.from("water_logs").insert({ user_id: USER_ID, date: today, cups });
+      await supabase.from("water_logs").insert({ user_id: userId!, date: today, cups });
     }
   }
 

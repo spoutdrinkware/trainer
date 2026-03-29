@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { USER_ID, DAYS, MEAL_TYPES } from "@/lib/constants";
+import { useUser } from "@/lib/useUser";
+import { DAYS, MEAL_TYPES } from "@/lib/constants";
 import { ChevronDown, ChevronUp, UtensilsCrossed } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ interface MealPlan {
 }
 
 export default function MealsPage() {
+  const userId = useUser();
   const [meals, setMeals] = useState<MealPlan[]>([]);
   const [expandedDay, setExpandedDay] = useState<number | null>(new Date().getDay());
   const [weekOffset, setWeekOffset] = useState(0);
@@ -30,14 +32,15 @@ export default function MealsPage() {
     const { data } = await supabase
       .from("meal_plans")
       .select("*")
-      .eq("user_id", USER_ID)
+      .eq("user_id", userId!)
       .eq("week_start", weekStart)
       .order("day_of_week")
       .order("meal_type");
     if (data) setMeals(data);
-  }, [weekStart]);
+  }, [weekStart, userId]);
 
   useEffect(() => {
+    if (!userId) return;
     loadMeals();
   }, [loadMeals]);
 

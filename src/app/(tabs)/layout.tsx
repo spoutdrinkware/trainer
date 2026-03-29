@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 import {
   Home,
   Sparkles,
@@ -10,6 +11,7 @@ import {
   PieChart,
   Dumbbell,
   TrendingUp,
+  LogOut,
 } from "lucide-react";
 
 const tabs = [
@@ -24,6 +26,12 @@ const tabs = [
 
 export default function TabsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/auth");
+  }
 
   return (
     <div className="flex h-dvh overflow-hidden bg-[#0a0a0f]">
@@ -54,6 +62,15 @@ export default function TabsLayout({ children }: { children: React.ReactNode }) 
             );
           })}
         </nav>
+        <div className="p-3 border-t border-[#1e1e2e]">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-[#6b7280] hover:text-white hover:bg-[#111118] transition-all w-full"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
+        </div>
       </aside>
 
       {/* Main content */}

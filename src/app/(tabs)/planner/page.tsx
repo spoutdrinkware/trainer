@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { USER_ID, getWeekStart, DAYS } from "@/lib/constants";
+import { useUser } from "@/lib/useUser";
+import { getWeekStart, DAYS } from "@/lib/constants";
 import {
   Send,
   Save,
@@ -52,6 +53,7 @@ function extractPlan(text: string): PlanData | null {
 }
 
 export default function PlannerPage() {
+  const userId = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -133,20 +135,20 @@ export default function PlannerPage() {
     const weekStart = getWeekStart();
 
     if (plan.meals && plan.meals.length > 0) {
-      await supabase.from("meal_plans").delete().eq("user_id", USER_ID).eq("week_start", weekStart);
+      await supabase.from("meal_plans").delete().eq("user_id", userId!).eq("week_start", weekStart);
       await supabase.from("meal_plans").insert(
         plan.meals.map((m) => ({
-          user_id: USER_ID, week_start: weekStart, day_of_week: m.day_of_week,
+          user_id: userId!, week_start: weekStart, day_of_week: m.day_of_week,
           meal_type: m.meal_type, title: m.title, recipe_json: m.recipe_json,
         }))
       );
     }
 
     if (plan.workouts && plan.workouts.length > 0) {
-      await supabase.from("workouts").delete().eq("user_id", USER_ID).eq("week_start", weekStart);
+      await supabase.from("workouts").delete().eq("user_id", userId!).eq("week_start", weekStart);
       await supabase.from("workouts").insert(
         plan.workouts.map((w) => ({
-          user_id: USER_ID, week_start: weekStart, day_of_week: w.day_of_week,
+          user_id: userId!, week_start: weekStart, day_of_week: w.day_of_week,
           session: w.session, name: w.name, environment: w.environment, exercises_json: w.exercises_json,
         }))
       );

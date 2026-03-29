@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { USER_ID, DAYS, todayString } from "@/lib/constants";
+import { useUser } from "@/lib/useUser";
+import { DAYS, todayString } from "@/lib/constants";
 import { Dumbbell, TreePine, Building2, Check, ChevronDown, ChevronUp } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ interface Workout {
 }
 
 export default function WorkoutsPage() {
+  const userId = useUser();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);
   const [expandedDay, setExpandedDay] = useState<number | null>(new Date().getDay());
@@ -29,14 +31,15 @@ export default function WorkoutsPage() {
     const { data } = await supabase
       .from("workouts")
       .select("*")
-      .eq("user_id", USER_ID)
+      .eq("user_id", userId!)
       .eq("week_start", weekStart)
       .order("day_of_week")
       .order("session");
     if (data) setWorkouts(data);
-  }, [weekStart]);
+  }, [weekStart, userId]);
 
   useEffect(() => {
+    if (!userId) return;
     loadWorkouts();
   }, [loadWorkouts]);
 
@@ -50,7 +53,7 @@ export default function WorkoutsPage() {
     const { data: existing } = await supabase
       .from("checklist_logs")
       .select("id")
-      .eq("user_id", USER_ID)
+      .eq("user_id", userId!)
       .eq("date", today)
       .eq("item", checkItem)
       .maybeSingle();
@@ -58,7 +61,7 @@ export default function WorkoutsPage() {
     if (existing) {
       await supabase.from("checklist_logs").update({ completed: newVal }).eq("id", existing.id);
     } else {
-      await supabase.from("checklist_logs").insert({ user_id: USER_ID, date: today, item: checkItem, completed: newVal });
+      await supabase.from("checklist_logs").insert({ user_id: userId!, date: today, item: checkItem, completed: newVal });
     }
 
     loadWorkouts();

@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { USER_ID, todayString, CHECKLIST_ITEMS } from "@/lib/constants";
+import { useUser } from "@/lib/useUser";
+import { todayString, CHECKLIST_ITEMS } from "@/lib/constants";
 import { Scale, Camera, Flame, TrendingDown, ImageIcon } from "lucide-react";
 import {
   LineChart,
@@ -29,6 +30,7 @@ interface ProgressPhoto {
 }
 
 export default function ProgressPage() {
+  const userId = useUser();
   const [weights, setWeights] = useState<WeightLog[]>([]);
   const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
   const [weightInput, setWeightInput] = useState("");
@@ -40,26 +42,26 @@ export default function ProgressPage() {
     const { data } = await supabase
       .from("weight_logs")
       .select("date, weight_lbs")
-      .eq("user_id", USER_ID)
+      .eq("user_id", userId!)
       .order("date");
     if (data) setWeights(data.map((d) => ({ ...d, weight_lbs: Number(d.weight_lbs) })));
-  }, []);
+  }, [userId]);
 
   const loadPhotos = useCallback(async () => {
     const { data } = await supabase
       .from("progress_photos")
       .select("*")
-      .eq("user_id", USER_ID)
+      .eq("user_id", userId!)
       .order("date", { ascending: false })
       .limit(20);
     if (data) setPhotos(data);
-  }, []);
+  }, [userId]);
 
   const calcStreak = useCallback(async () => {
     const { data } = await supabase
       .from("checklist_logs")
       .select("date, completed")
-      .eq("user_id", USER_ID)
+      .eq("user_id", userId!)
       .eq("completed", true)
       .order("date", { ascending: false });
 
@@ -82,9 +84,10 @@ export default function ProgressPage() {
       }
     }
     setStreak(count);
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
+    if (!userId) return;
     loadWeights();
     loadPhotos();
     calcStreak();
@@ -98,14 +101,14 @@ export default function ProgressPage() {
     const { data: existing } = await supabase
       .from("weight_logs")
       .select("id")
-      .eq("user_id", USER_ID)
+      .eq("user_id", userId!)
       .eq("date", today)
       .maybeSingle();
 
     if (existing) {
       await supabase.from("weight_logs").update({ weight_lbs: w }).eq("id", existing.id);
     } else {
-      await supabase.from("weight_logs").insert({ user_id: USER_ID, date: today, weight_lbs: w });
+      await supabase.from("weight_logs").insert({ user_id: userId!, date: today, weight_lbs: w });
     }
     setWeightInput("");
     loadWeights();
@@ -117,14 +120,14 @@ export default function ProgressPage() {
     setUploading(true);
 
     const ext = file.name.split(".").pop();
-    const path = `${USER_ID}/${today}-${Date.now()}.${ext}`;
+    const path = `${userId}/${today}-${Date.now()}.${ext}`;
 
     const { error } = await supabase.storage.from("progress-photos").upload(path, file);
 
     if (!error) {
       const { data: urlData } = supabase.storage.from("progress-photos").getPublicUrl(path);
       await supabase.from("progress_photos").insert({
-        user_id: USER_ID, date: today, storage_url: urlData.publicUrl, notes: "",
+        user_id: userId!, date: today, storage_url: urlData.publicUrl, notes: "",
       });
       loadPhotos();
     }
