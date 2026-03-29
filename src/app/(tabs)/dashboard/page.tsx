@@ -281,9 +281,9 @@ export default function DashboardPage() {
 
       {/* 3. Day counter */}
       <div className="text-center py-6">
+        <p className="text-[12px] font-bold text-[#6b7280] tracking-[0.3em] uppercase mb-2">DAY</p>
         <div className="stat-number text-[72px] text-white leading-none">
-          DAY {dayNum > 0 ? dayNum : "--"}
-          <span className="text-[#6b7280] text-[28px]"> OF 75</span>
+          {dayNum > 0 ? dayNum : "--"}
         </div>
         <p className="text-sm italic text-[#6b7280] mt-4 max-w-xs mx-auto">
           &ldquo;{quote}&rdquo;

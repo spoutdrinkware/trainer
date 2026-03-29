@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, Share2, ShoppingCart } from "lucide-react";
 import { getWeekStart } from "@/lib/constants";
+import { getWeekLabel } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,7 @@ export default function GroceriesPage() {
   const [categories, setCategories] = useState<GroceryCategory[]>(INITIAL_GROCERIES);
   const [copied, setCopied] = useState(false);
   const weekStart = getWeekStart();
+  const weekLabel = getWeekLabel(new Date());
 
   function toggleItem(catIndex: number, itemIndex: number) {
     setCategories((prev) =>
@@ -81,7 +83,7 @@ export default function GroceriesPage() {
       )
       .join("\n");
 
-    const text = `Grocery List — Week of ${weekStart}\n\n${unchecked}`;
+    const text = `Grocery List — ${weekLabel}\n\n${unchecked}`;
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -110,7 +112,7 @@ export default function GroceriesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-black text-white">Grocery List</h1>
-          <p className="text-xs text-[#6b7280] mt-0.5">Week of {weekStart}</p>
+          <p className="text-xs text-[#6b7280] mt-0.5">{weekLabel}</p>
         </div>
         <button
           onClick={shareList}

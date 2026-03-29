@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/useUser";
 import { DAYS, MEAL_TYPES } from "@/lib/constants";
+import { getWeekLabel } from "@/lib/utils";
 import { ChevronDown, ChevronUp, UtensilsCrossed } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +60,7 @@ export default function MealsPage() {
           >
             Prev
           </button>
-          <span className="text-xs text-[#6b7280] font-mono">{weekStart}</span>
+          <span className="text-xs text-[#6b7280] font-mono">{getWeekLabel(new Date(weekStart + "T00:00:00"))}</span>
           <button
             onClick={() => setWeekOffset((w) => w + 1)}
             className="px-3 py-1.5 text-xs font-bold rounded-xl bg-[#111118] border border-[#1e1e2e] text-[#6b7280] hover:text-white transition-colors"
