@@ -17,6 +17,8 @@ interface MacroLog {
   logged_at: string;
 }
 
+export const dynamic = "force-dynamic";
+
 export default function MacrosPage() {
   const [logs, setLogs] = useState<MacroLog[]>([]);
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);

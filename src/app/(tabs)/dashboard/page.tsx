@@ -84,6 +84,8 @@ function getOutdoorRecommendation(weather: Weather): string {
   return "Great conditions -- stroller run, ruck walk, or outdoor HIIT.";
 }
 
+export const dynamic = "force-dynamic";
+
 export default function DashboardPage() {
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const [weather, setWeather] = useState<Weather | null>(null);

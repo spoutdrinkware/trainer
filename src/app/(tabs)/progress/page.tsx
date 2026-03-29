@@ -27,6 +27,8 @@ interface ProgressPhoto {
   notes: string;
 }
 
+export const dynamic = "force-dynamic";
+
 export default function ProgressPage() {
   const [weights, setWeights] = useState<WeightLog[]>([]);
   const [photos, setPhotos] = useState<ProgressPhoto[]>([]);

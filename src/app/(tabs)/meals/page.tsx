@@ -18,6 +18,8 @@ interface MealPlan {
   } | null;
 }
 
+export const dynamic = "force-dynamic";
+
 export default function MealsPage() {
   const [meals, setMeals] = useState<MealPlan[]>([]);
   const [expandedDay, setExpandedDay] = useState<number | null>(new Date().getDay());

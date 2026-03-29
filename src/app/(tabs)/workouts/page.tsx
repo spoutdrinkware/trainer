@@ -18,6 +18,8 @@ interface Workout {
   week_start: string;
 }
 
+export const dynamic = "force-dynamic";
+
 export default function WorkoutsPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);

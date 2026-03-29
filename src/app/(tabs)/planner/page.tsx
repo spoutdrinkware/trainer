@@ -50,6 +50,8 @@ function extractPlan(text: string): PlanData | null {
   }
 }
 
+export const dynamic = "force-dynamic";
+
 export default function PlannerPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
