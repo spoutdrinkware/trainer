@@ -80,7 +80,7 @@ export async function POST(req: Request) {
     const systemContent = `${SYSTEM_PROMPT}\n\nCurrent 7-day weather forecast for ${LOCATION.name}:\n${weather}`;
 
     const stream = client.messages.stream({
-      model: "claude-sonnet-4-6-20250514",
+      model: "claude-sonnet-4-5-20241022",
       max_tokens: 8192,
       system: systemContent,
       messages: messages.map((m: { role: string; content: string }) => ({
