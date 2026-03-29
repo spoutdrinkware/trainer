@@ -4,19 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
+  Sparkles,
   UtensilsCrossed,
+  ShoppingCart,
   PieChart,
   Dumbbell,
-  Sparkles,
   TrendingUp,
 } from "lucide-react";
 
 const tabs = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
+  { name: "Planner", href: "/planner", icon: Sparkles },
   { name: "Meals", href: "/meals", icon: UtensilsCrossed },
+  { name: "Groceries", href: "/groceries", icon: ShoppingCart },
   { name: "Macros", href: "/macros", icon: PieChart },
   { name: "Workouts", href: "/workouts", icon: Dumbbell },
-  { name: "Planner", href: "/planner", icon: Sparkles },
   { name: "Progress", href: "/progress", icon: TrendingUp },
 ];
 
@@ -66,7 +68,7 @@ export default function TabsLayout({ children }: { children: React.ReactNode }) 
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl text-[10px] font-bold tracking-wide transition-colors ${
+                className={`flex flex-col items-center gap-0.5 px-1 py-1.5 rounded-xl text-[9px] font-bold tracking-wide transition-colors ${
                   active
                     ? "text-[#c8441a]"
                     : "text-[#6b7280]"
