@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Check, Share2, ShoppingCart } from "lucide-react";
-import { getWeekStart } from "@/lib/constants";
-import { getWeekLabel } from "@/lib/utils";
+import { getCurrentWeekStart, getWeekLabel, formatWeekStart } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -58,8 +57,9 @@ const INITIAL_GROCERIES: GroceryCategory[] = [
 export default function GroceriesPage() {
   const [categories, setCategories] = useState<GroceryCategory[]>(INITIAL_GROCERIES);
   const [copied, setCopied] = useState(false);
-  const weekStart = getWeekStart();
-  const weekLabel = getWeekLabel(new Date());
+  const weekDate = getCurrentWeekStart();
+  const weekStart = formatWeekStart(weekDate);
+  const weekLabel = getWeekLabel(weekDate);
 
   function toggleItem(catIndex: number, itemIndex: number) {
     setCategories((prev) =>

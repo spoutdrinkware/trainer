@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/useUser";
 import { DAYS, todayString } from "@/lib/constants";
-import { getWeekLabel } from "@/lib/utils";
+import { getWeekLabel, getWeekStartWithOffset, formatWeekStart } from "@/lib/utils";
 import { Dumbbell, TreePine, Building2, Check, ChevronDown, ChevronUp } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +26,8 @@ export default function WorkoutsPage() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [expandedDay, setExpandedDay] = useState<number | null>(new Date().getDay());
 
-  const weekStart = getWeekStartOffset(weekOffset);
+  const weekDate = getWeekStartWithOffset(weekOffset);
+  const weekStart = formatWeekStart(weekDate);
 
   const loadWorkouts = useCallback(async () => {
     const { data, error } = await supabase
@@ -80,7 +81,7 @@ export default function WorkoutsPage() {
           >
             Prev
           </button>
-          <span className="text-xs text-[#6b7280] font-mono">{getWeekLabel(new Date(weekStart + "T00:00:00"))}</span>
+          <span className="text-xs text-[#6b7280] font-mono">{getWeekLabel(weekDate)}</span>
           <button
             onClick={() => setWeekOffset((w) => w + 1)}
             className="px-3 py-1.5 text-xs font-bold rounded-xl bg-[#111118] border border-[#1e1e2e] text-[#6b7280] hover:text-white transition-colors"
@@ -207,9 +208,3 @@ export default function WorkoutsPage() {
   );
 }
 
-function getWeekStartOffset(offset: number): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - d.getDay() + offset * 7);
-  return d.toISOString().split("T")[0];
-}

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/useUser";
 import { DAYS, MEAL_TYPES } from "@/lib/constants";
-import { getWeekLabel } from "@/lib/utils";
+import { getWeekLabel, getWeekStartWithOffset, formatWeekStart } from "@/lib/utils";
 import { ChevronDown, ChevronUp, UtensilsCrossed } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +27,8 @@ export default function MealsPage() {
   const [expandedDay, setExpandedDay] = useState<number | null>(new Date().getDay());
   const [weekOffset, setWeekOffset] = useState(0);
 
-  const weekStart = getWeekStartOffset(weekOffset);
+  const weekDate = getWeekStartWithOffset(weekOffset);
+  const weekStart = formatWeekStart(weekDate);
 
   const loadMeals = useCallback(async () => {
     const { data, error } = await supabase
@@ -61,7 +62,7 @@ export default function MealsPage() {
           >
             Prev
           </button>
-          <span className="text-xs text-[#6b7280] font-mono">{getWeekLabel(new Date(weekStart + "T00:00:00"))}</span>
+          <span className="text-xs text-[#6b7280] font-mono">{getWeekLabel(weekDate)}</span>
           <button
             onClick={() => setWeekOffset((w) => w + 1)}
             className="px-3 py-1.5 text-xs font-bold rounded-xl bg-[#111118] border border-[#1e1e2e] text-[#6b7280] hover:text-white transition-colors"
@@ -165,9 +166,3 @@ export default function MealsPage() {
   );
 }
 
-function getWeekStartOffset(offset: number): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - d.getDay() + offset * 7);
-  return d.toISOString().split("T")[0];
-}

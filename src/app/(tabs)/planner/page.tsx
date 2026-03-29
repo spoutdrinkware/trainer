@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useUser } from "@/lib/useUser";
-import { getWeekStart, DAYS } from "@/lib/constants";
+import { DAYS } from "@/lib/constants";
+import { getCurrentWeekStart, formatWeekStart } from "@/lib/utils";
 import {
   Send,
   Save,
@@ -137,7 +138,7 @@ export default function PlannerPage() {
   async function savePlan() {
     if (!plan || !userId) return;
     setSaving(true);
-    const weekStart = getWeekStart();
+    const weekStart = formatWeekStart(getCurrentWeekStart());
 
     try {
       const res = await fetch("/api/save-plan", {
