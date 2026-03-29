@@ -29,13 +29,14 @@ export default function WorkoutsPage() {
   const weekStart = getWeekStartOffset(weekOffset);
 
   const loadWorkouts = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("workouts")
       .select("*")
       .eq("user_id", userId!)
       .eq("week_start", weekStart)
       .order("day_of_week")
       .order("session");
+    console.log("[Workouts] query:", { userId, weekStart, rows: data?.length, error: error?.message });
     if (data) setWorkouts(data);
   }, [weekStart, userId]);
 

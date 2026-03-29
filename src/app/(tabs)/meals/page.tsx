@@ -30,13 +30,14 @@ export default function MealsPage() {
   const weekStart = getWeekStartOffset(weekOffset);
 
   const loadMeals = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("meal_plans")
       .select("*")
       .eq("user_id", userId!)
       .eq("week_start", weekStart)
       .order("day_of_week")
       .order("meal_type");
+    console.log("[Meals] query:", { userId, weekStart, rows: data?.length, error: error?.message });
     if (data) setMeals(data);
   }, [weekStart, userId]);
 

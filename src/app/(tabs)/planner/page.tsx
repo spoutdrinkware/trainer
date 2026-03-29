@@ -139,7 +139,7 @@ export default function PlannerPage() {
       const { error: insErr } = await supabase.from("workouts").insert(
         plan.workouts.map((w) => ({
           user_id: userId, week_start: weekStart, day_of_week: w.day_of_week,
-          session: w.session, name: w.name, environment: w.environment, exercises_json: w.exercises_json,
+          session: w.session, name: w.name, environment: w.environment, exercises_json: w.exercises_json, completed: false,
         }))
       );
       if (insErr) errors.push(`Insert workouts: ${insErr.message}`);
@@ -149,7 +149,7 @@ export default function PlannerPage() {
     if (errors.length > 0) {
       alert(`Save failed:\n${errors.join("\n")}`);
     } else {
-      alert("Plan saved! Check Meals and Workouts tabs.");
+      alert(`Saved ${plan.meals?.length || 0} meals and ${plan.workouts?.length || 0} workouts for week_start=${weekStart}, user=${userId?.slice(0, 8)}...`);
     }
   }
 
