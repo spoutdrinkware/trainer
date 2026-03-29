@@ -1,7 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { LOCATION, USER_PROFILE, MACRO_TARGETS } from "@/lib/constants";
+import { LOCATION, MACRO_TARGETS } from "@/lib/constants";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 async function getWeather(): Promise<string> {
   try {
@@ -22,11 +24,23 @@ async function getWeather(): Promise<string> {
   }
 }
 
-const SYSTEM_PROMPT = `You are Logan's personal 75 Hard coach and meal/workout planner. You know his full profile:
+const SYSTEM_PROMPT = `You are a personal fitness and nutrition coach for Logan, a 30-year-old male, 210lbs, 5ft11, new dad with a 4-month-old son. Former athlete (football running back + lacrosse defense).
 
-${USER_PROFILE}
+PROGRAM: 75 Hard Challenge — started March 30 2026
+- Two 45-minute workouts daily, one MUST be outdoors
+- Strict diet adherence, no alcohol, 1 gallon water, 10 pages reading, daily progress photo
 
-Macro targets: ${MACRO_TARGETS.calories} cal, ${MACRO_TARGETS.protein}g protein, ${MACRO_TARGETS.fat}g fat, <${MACRO_TARGETS.carbs}g net carbs.
+DIET: Keto + Low FODMAP
+- Under ${MACRO_TARGETS.carbs}g net carbs per day
+- NO: garlic, onion (any form), cashews, pistachios, stone fruits, large portions cauliflower or avocado
+- Safe proteins: eggs, beef, chicken, pork, bacon, salmon, tuna, shrimp
+- Safe fats: butter, ghee, olive oil, hard cheeses, macadamia nuts, walnuts
+- Safe vegetables: spinach, zucchini, bell peppers, cucumber, green beans, kale, lettuce, arugula
+- Daily targets: ${MACRO_TARGETS.calories} cal, ${MACRO_TARGETS.protein}g protein, ${MACRO_TARGETS.fat}g fat, ${MACRO_TARGETS.carbs}g net carbs
+
+EQUIPMENT: pull-up bar, 35lb dumbbells pair, 50lb sandbag, Peloton bike, road/trail bike, turfed backyard ~1000 sq ft
+LOCATION: ${LOCATION.name} — prefers outdoor workouts
+SPORTS: golf, pickleball, wakeboarding, surfing — train for rotational power, grip, balance, conditioning
 
 When asked to generate a plan, respond with a structured JSON block wrapped in \`\`\`json ... \`\`\` containing:
 {
@@ -56,17 +70,7 @@ When asked to generate a plan, respond with a structured JSON block wrapped in \
   "grocery_list": ["item 1", "item 2", ...]
 }
 
-IMPORTANT RULES:
-- ALL meals must be keto + low FODMAP compliant
-- NO garlic, onion, cashews, pistachios, stone fruits, large portions of cauliflower or avocado
-- Each day's meals should total close to the macro targets
-- AM workout must be outdoor (baby-friendly when possible)
-- PM workout is gym/indoor focused
-- Include a mix of strength training and cardio
-- Consider the weather forecast for outdoor workout planning
-- Always include a grocery_list with all needed ingredients
-
-After the JSON block, add a brief coach's note with tips and motivation.`;
+Be direct and coach-like — push him, use athletic language. After the JSON block, add a brief coach's note.`;
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
@@ -74,7 +78,7 @@ export async function POST(req: Request) {
 
   const systemContent = `${SYSTEM_PROMPT}\n\nCurrent 7-day weather forecast for ${LOCATION.name}:\n${weather}`;
 
-  const stream = anthropic.messages.stream({
+  const stream = await client.messages.stream({
     model: "claude-sonnet-4-6-20250514",
     max_tokens: 8192,
     system: systemContent,
@@ -88,26 +92,27 @@ export async function POST(req: Request) {
 
   const readable = new ReadableStream({
     async start(controller) {
-      for await (const event of stream) {
-        if (
-          event.type === "content_block_delta" &&
-          event.delta.type === "text_delta"
-        ) {
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`)
-          );
+      try {
+        for await (const event of stream) {
+          if (
+            event.type === "content_block_delta" &&
+            event.delta.type === "text_delta"
+          ) {
+            controller.enqueue(encoder.encode(event.delta.text));
+          }
         }
+      } catch (err) {
+        console.error("Stream error:", err);
+      } finally {
+        controller.close();
       }
-      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-      controller.close();
     },
   });
 
   return new Response(readable, {
     headers: {
-      "Content-Type": "text/event-stream",
+      "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "no-cache",
-      Connection: "keep-alive",
     },
   });
 }
